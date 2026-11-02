@@ -71,7 +71,7 @@
   function bubble(m, pend) {
     if (m.resep) return resepBubble(m);
     const el = document.createElement('div'), me = m.dari === 'pasien'; el.className = 'm ' + (me ? 'me' : 'them') + (pend ? ' pending' : '');
-    if (!me) { const w = document.createElement('span'); w.className = 'who'; w.textContent = (m.nama || 'Klinik'); el.appendChild(w); }
+    if (!me) { const w = namaDokter(m.nama || 'Klinik', m.pid, 'who'); el.appendChild(w); }
     if (m.foto) { const ph = document.createElement('span'); ph.className = 'ph'; ph.textContent = 'Memuat foto…'; el.appendChild(ph); loadFoto(m.foto, ph, pend ? m.foto : null); }
     if (m.teks) { const t = document.createElement('span'); t.textContent = m.teks; el.appendChild(t); }
     const tm = document.createElement('time'); tm.textContent = pend ? 'Mengirim…' : fmtT(m.waktu); el.appendChild(tm); return el;
@@ -82,25 +82,50 @@
     const b = document.createElement('div'); b.className = 'm them rxm'; b.dataset.rid = m.resep; const w = document.createElement('span'); w.className = 'ph'; w.textContent = 'Memuat resep…'; b.appendChild(w); loadResep(m.resep, b); return b;
   }
   async function loadResep(rid, box) {
-    const gen = S.gen; try { const r = await api('konsulResep', { rid: rid }, S.token); if (gen !== S.gen) return; box.textContent = ''; if (!r.success) throw 0; box.appendChild(resepCard(r.data, true)); } catch (e) { box.textContent = 'Resep tidak dapat dimuat.'; }
+    const gen = S.gen; try { const r = await api('konsulResep', { rid: rid }, S.token); if (gen !== S.gen) return; box.textContent = ''; if (!r.success) throw 0; box.appendChild(resepCard(r.data, true, true)); } catch (e) { box.textContent = 'Resep tidak dapat dimuat.'; }
   }
   function refreshResep(rid) { document.querySelectorAll('.rxm[data-rid="' + rid + '"]').forEach(b => loadResep(rid, b)); }
-  function resepCard(d, aksi) {
+  const BLN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const tglID = x => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(x || '')); return m ? (+m[3]) + ' ' + BLN[+m[2] - 1] + ' ' + m[1] : String(x || ''); };
+  const FOOT = 'Resep ini dapat ditebus di klinik Khitan Prime (GRATIS) atau apotek terdekat.';
+  function namaDokter(txt, pid, cls) { // nama dokter yang dapat diklik (hanya bila profil terisi)
+    if (!pid) { const s = document.createElement('span'); if (cls) s.className = cls; s.textContent = txt; return s; }
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'dok ' + (cls || ''); b.textContent = txt; b.title = 'Lihat profil dokter';
+    b.addEventListener('click', ev => { ev.stopPropagation(); profilDokter(pid, txt); }); return b;
+  }
+  async function profilDokter(pid, nama) {
+    const bg = document.createElement('div'); bg.className = 'dlg'; const box = document.createElement('div'); box.className = 'dlg-b'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'dlg-x'; x.textContent = '✕'; x.setAttribute('aria-label', 'Tutup'); const tutup = () => bg.remove(); x.addEventListener('click', tutup); bg.addEventListener('click', e => { if (e.target === bg) tutup(); });
+    const info = document.createElement('p'); info.className = 'mute'; info.textContent = 'Memuat profil…'; box.append(x, info); bg.appendChild(box); document.body.appendChild(bg); x.focus();
+    try {
+      const r = await api('konsulDokter', { pid: pid }, S.token); if (!r.success) throw 0; const d = r.data; info.remove();
+      if (d.foto) { const im = document.createElement('img'); im.className = 'dlg-f'; im.src = d.foto; im.alt = 'Foto ' + d.nama; box.appendChild(im); } else { const ph = document.createElement('div'); ph.className = 'dlg-f ph0'; ph.textContent = (d.nama || nama || '?').replace(/^dr\.?\s*/i, '').charAt(0).toUpperCase(); box.appendChild(ph); }
+      const n = document.createElement('b'); n.className = 'dlg-n'; n.textContent = d.nama || nama; const j = document.createElement('div'); j.className = 'dlg-j'; j.textContent = d.jabatan; const sp = document.createElement('div'); sp.className = 'dlg-s'; sp.textContent = 'SIP: ' + d.sip; const k = document.createElement('small'); k.className = 'mute'; k.textContent = KLINIK_NAMA;
+      box.append(n, j, sp, k);
+    } catch (e) { info.textContent = 'Profil tidak dapat dimuat.'; }
+  }
+  function resepCard(d, aksi, qr) {
     const t = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
-    const c = t('div', 'rx' + (d.status !== 'Aktif' ? ' off' : '')); c.appendChild(t('b', 'rx-k', d.klinik || KLINIK_NAMA)); if (d.alamat) c.appendChild(t('small', null, d.alamat));
-    c.appendChild(t('div', 'rx-t', 'RESEP ' + d.id + (d.status !== 'Aktif' ? ' — ' + d.status.toUpperCase() + ' (jangan dipakai)' : ''))); c.appendChild(t('small', null, 'Tanggal: ' + d.tanggal + ' · Pasien: ' + d.nama));
-    const ol = t('ol', 'rx-l'); d.items.forEach(i => { const li = t('li'); li.appendChild(t('b', null, i.obat + '  —  ' + i.jumlah)); li.appendChild(t('div', null, i.aturan)); ol.appendChild(li); }); c.appendChild(ol);
+    const off = d.status !== 'Aktif', c = t('div', 'rx' + (off ? ' off' : ''));
+    if (off) c.appendChild(t('div', 'rx-off', 'RESEP ' + d.status.toUpperCase() + ' — JANGAN DIPAKAI'));
+    const kop = t('div', 'rx-kop'); const lg = t('img', 'rx-logo'); lg.src = 'assets/logo.jpg'; lg.alt = ''; kop.appendChild(lg);
+    const kt = t('div', 'rx-kt'); kt.appendChild(t('b', 'rx-k', d.klinik || KLINIK_NAMA)); if (d.alamat) kt.appendChild(t('small', null, d.alamat)); if (d.wa) kt.appendChild(t('small', null, 'WhatsApp: ' + d.wa)); kop.appendChild(kt); c.appendChild(kop); c.appendChild(t('hr', 'rx-hr'));
+    c.appendChild(t('div', 'rx-tg', (d.kota ? d.kota + ', ' : '') + tglID(d.tanggal)));
+    const ls = t('div', 'rx-ls'); d.items.forEach(i => { const it = t('div', 'rx-it'); const r1 = t('div', 'rx-r'); r1.appendChild(t('span', 'rx-rx', 'R/')); r1.appendChild(t('span', 'rx-ob', i.obat)); r1.appendChild(t('span', 'rx-no', 'No. ' + i.jumlah)); it.appendChild(r1); const r2 = t('div', 'rx-s2'); r2.appendChild(t('span', 'rx-ss', 'S')); r2.appendChild(t('span', null, i.aturan)); it.appendChild(r2); ls.appendChild(it); }); c.appendChild(ls);
     if (d.catatan) c.appendChild(t('p', 'rx-n', 'Catatan: ' + d.catatan));
-    const sg = t('div', 'rx-s'); if (d.ttd) { const im = t('img'); im.src = d.ttd; im.alt = 'Tanda tangan dokter'; sg.appendChild(im); } sg.appendChild(t('b', null, d.dokter)); sg.appendChild(t('small', null, 'SIP: ' + d.sip)); c.appendChild(sg);
-    c.appendChild(t('small', 'rx-v', 'Kode verifikasi: ' + d.kode));
-    c.appendChild(t('div', 'rx-foot', 'Resep ini dapat ditebus di klinik atau apotek terdekat. Keaslian dapat diperiksa di ' + location.origin + location.pathname + '?r=' + d.kode));
-    if (aksi && d.status === 'Aktif') { const b = t('button', null, 'Cetak / simpan PDF'); b.type = 'button'; b.addEventListener('click', () => { const pr = $('printRx'); pr.textContent = ''; const cp = resepCard(d, false); pr.appendChild(cp); window.print(); }); c.appendChild(b); }
+    const pro = t('div', 'rx-pro'); pro.appendChild(t('span', 'rx-pl', 'Pro:')); pro.appendChild(t('span', null, d.nama + (d.usia ? ' (' + d.usia + ')' : '') + (d.bb ? ' · BB ' + d.bb + (/kg/i.test(d.bb) ? '' : ' kg') : ''))); c.appendChild(pro);
+    const bt = t('div', 'rx-bt'); const L = t('div', 'rx-qr');
+    if (qr && window.KPQR) { const q = t('img'); q.src = KPQR.svg(location.origin + location.pathname + '?r=' + d.kode); q.alt = 'QR verifikasi resep'; L.appendChild(q); } L.appendChild(t('small', 'rx-v', 'Kode: ' + d.kode)); bt.appendChild(L);
+    const sg = t('div', 'rx-s'); if (d.ttd) { const im = t('img'); im.src = d.ttd; im.alt = 'Tanda tangan dokter'; sg.appendChild(im); } else sg.appendChild(t('div', 'rx-sp'));
+    sg.appendChild(aksi ? namaDokter(d.dokter, d.pid, 'rx-dn') : t('b', 'rx-dn', d.dokter)); sg.appendChild(t('small', null, 'SIP: ' + d.sip)); bt.appendChild(sg); c.appendChild(bt);
+    c.appendChild(t('div', 'rx-foot', FOOT)); if (qr) c.appendChild(t('div', 'rx-ver', 'Periksa keaslian: ' + location.origin + location.pathname + '?r=' + d.kode));
+    if (aksi && !off) { const b = t('button', 'rx-pr', 'Cetak / simpan PDF'); b.type = 'button'; b.addEventListener('click', () => { const pr = $('printRx'); pr.textContent = ''; pr.appendChild(resepCard(d, false, true)); window.print(); }); c.appendChild(b); }
     return c;
   }
   async function verifikasi(kode) {
     view('verif'); const m = $('verifMsg'), box = $('verifBox');
     try { const r = await api('cekResep', { k: kode }); if (!r.success) { m.textContent = r.message || 'Resep tidak ditemukan.'; return; }
-      m.textContent = r.data.status === 'Aktif' ? 'Resep TERDAFTAR dan masih berlaku.' : 'Resep terdaftar tetapi ' + r.data.status.toUpperCase() + '. Jangan dilayani.'; box.textContent = ''; box.appendChild(resepCard(r.data, false));
+      m.textContent = r.data.status === 'Aktif' ? 'Resep TERDAFTAR dan masih berlaku.' : 'Resep terdaftar tetapi ' + r.data.status.toUpperCase() + '. Jangan dilayani.'; box.textContent = ''; box.appendChild(resepCard(r.data, false, true));
     } catch (e) { m.textContent = 'Koneksi bermasalah. Coba lagi.'; }
   }
   async function loadFoto(fid, ph, local) {
