@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#00C2CB">
+<title>Konsultasi Pasca Khitan</title>
+<link rel="icon" href="assets/logo.jpg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main id="login" class="wrap" hidden>
+  <div class="card center">
+    <img src="assets/logo.jpg" alt="" class="logo">
+    <h1>Konsultasi Pasca Khitan</h1>
+    <p class="mute">Untuk memantau luka setelah khitan. Masuk dengan kode dari klinik dan 4 digit terakhir nomor HP orang tua yang didaftarkan.</p>
+    <form id="fLogin" autocomplete="off">
+      <label for="kode">Kode konsultasi</label>
+      <input id="kode" maxlength="24" autocapitalize="characters" spellcheck="false" placeholder="mis. KX7M2PQ4R9TB" required>
+      <label for="pin">PIN (4 digit terakhir no. HP)</label>
+      <input id="pin" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="••••" autocomplete="one-time-code" required>
+      <button id="bMasuk" type="submit" class="btn full">Masuk</button>
+      <p id="eLogin" class="err" role="alert"></p>
+    </form>
+  </div>
+  <p class="foot">Percakapan hanya dapat dilihat oleh Anda dan petugas klinik. Bila ada perdarahan banyak, demam tinggi, atau keluhan berat, segera hubungi klinik atau ke IGD.</p>
+</main>
+
+<main id="selesai" class="wrap" hidden>
+  <div class="card center"><img src="assets/logo.jpg" alt="" class="logo"><h1>Konsultasi Selesai</h1><p id="selesaiMsg" class="selesai"></p></div>
+</main>
+
+<main id="verif" class="wrap" hidden>
+  <div class="card"><h1>Pemeriksaan Keaslian Resep</h1><p id="verifMsg" class="mute">Memeriksa…</p><div id="verifBox"></div></div>
+  <p class="foot">Nama pasien disamarkan. Resep sah bila data di bawah sama dengan resep yang dibawa pasien.</p>
+</main>
+
+<section id="chat" class="chat" hidden>
+  <header>
+    <img src="assets/logo.jpg" alt="">
+    <div><b id="hNama">Konsultasi</b><small id="hSub"></small></div>
+    <button id="bKeluar" class="ghost" type="button" aria-label="Keluar">Keluar</button>
+  </header>
+  <div id="net" class="net" hidden>Koneksi bermasalah. Mencoba lagi…</div>
+  <div id="list" class="list" aria-live="polite"></div>
+  <p id="note" class="note"></p>
+  <form id="fKirim" class="bar">
+    <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+    <button id="bFoto" type="button" class="ic" aria-label="Lampirkan foto">📷</button>
+    <textarea id="teks" rows="1" maxlength="2000" placeholder="Tulis pesan…" aria-label="Pesan"></textarea>
+    <button id="bKirim" type="submit" class="ic send" aria-label="Kirim">➤</button>
+  </form>
+  <div id="prev" class="prev" hidden><img id="prevImg" alt="Pratinjau"><button id="prevX" type="button" aria-label="Batal foto">✕</button></div>
+</section>
+
+<div id="printRx" class="print-only"></div>
+<div id="zoom" class="zoom" hidden><img id="zoomImg" alt="Foto"><button id="zoomX" type="button" aria-label="Tutup">✕</button></div>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
