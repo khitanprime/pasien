@@ -37,6 +37,11 @@
   <p class="foot">Nama pasien disamarkan. Resep sah bila data di bawah sama dengan resep yang dibawa pasien.</p>
 </main>
 
+<main id="dok" class="wrap wide" hidden>
+  <div class="card"><h1 id="dokJudul">Dokumen</h1><p id="dokMsg" class="mute">Memuat dokumen…</p><div id="dokBox" class="dok-box"></div><button id="dokDl" type="button" class="btn full" hidden>Unduh PDF</button></div>
+  <p class="foot">Dokumen ini hanya untuk pemegang tautan dari klinik. Jangan dibagikan ke orang lain.</p>
+</main>
+
 <section id="chat" class="chat" hidden>
   <header>
     <img src="assets/logo.jpg" alt="">
@@ -59,6 +64,7 @@
 <div id="zoom" class="zoom" hidden><img id="zoomImg" alt="Foto"><button id="zoomX" type="button" aria-label="Tutup">✕</button></div>
 <script src="js/config.js"></script>
 <script src="js/qrcode.js"></script>
+<script src="js/pdfview.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

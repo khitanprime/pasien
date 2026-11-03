@@ -16,7 +16,7 @@
       return j;
     } catch (e) { if (e && e.code) throw e; throw { code: 'NET', message: 'Koneksi bermasalah.' }; } finally { clearTimeout(tm); }
   }
-  const view = n => { ['login', 'chat', 'selesai', 'verif'].forEach(x => { $(x).hidden = n !== x; }); };
+  const view = n => { ['login', 'chat', 'selesai', 'verif', 'dok'].forEach(x => { $(x).hidden = n !== x; }); };
   const norm = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
   // ---------- Masuk ----------
@@ -122,6 +122,15 @@
     if (aksi && !off) { const b = t('button', 'rx-pr', 'Cetak / simpan PDF'); b.type = 'button'; b.addEventListener('click', () => { const pr = $('printRx'); pr.textContent = ''; pr.appendChild(resepCard(d, false, true)); window.print(); }); c.appendChild(b); }
     return c;
   }
+  async function dokumen(kode) { // tautan dokumen dari klinik: #/d/KODE (booking confirmation, invoice, bukti bayar)
+    view('dok'); const m = $('dokMsg'), box = $('dokBox'), dl = $('dokDl'); dl.hidden = true; m.textContent = 'Memuat dokumen…'; box.textContent = '';
+    try {
+      const r = await api('dokPublik', { k: kode }); if (!r.success) { m.textContent = r.message || 'Dokumen tidak ditemukan.'; return; }
+      $('dokJudul').textContent = r.data.judul + (r.data.klinik ? ' — ' + r.data.klinik : ''); m.textContent = '';
+      try { await PDFV.show(box, r.data.pdf); } catch (e) { m.textContent = 'Pratinjau tidak dapat ditampilkan di perangkat ini. Silakan unduh dokumennya.'; }
+      dl.hidden = false; dl.onclick = () => PDFV.save(r.data.pdf, r.data.nama);
+    } catch (e) { m.textContent = 'Koneksi bermasalah. Coba lagi.'; }
+  }
   async function verifikasi(kode) {
     view('verif'); const m = $('verifMsg'), box = $('verifBox');
     try { const r = await api('cekResep', { k: kode }); if (!r.success) { m.textContent = r.message || 'Resep tidak ditemukan.'; return; }
@@ -203,6 +212,7 @@
 
   // ---------- Mulai ----------
   (function init() {
+    const hd = /^#\/d\/([A-Za-z0-9-]{6,24})\/?$/.exec(location.hash); if (hd) return dokumen(norm(hd[1]));
     const ur = new URL(location.href).searchParams.get('r'); if (ur) { history.replaceState(null, '', location.pathname); return verifikasi(norm(ur)); }
     const kode = fromUrl(); S.kode = kode; $('kode').value = kode;
     const tok = SS.get('kp_tok');
