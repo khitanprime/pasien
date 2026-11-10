@@ -88,7 +88,7 @@
   function refreshResep(rid) { document.querySelectorAll('.rxm[data-rid="' + rid + '"]').forEach(b => loadResep(rid, b)); }
   const BLN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const tglID = x => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(x || '')); return m ? (+m[3]) + ' ' + BLN[+m[2] - 1] + ' ' + m[1] : String(x || ''); };
-  const FOOT = 'Resep ini dapat ditebus di klinik Khitan Prime (GRATIS) atau apotek terdekat.';
+  const FOOT = 'Resep ini dapat ditebus di Klinik Khitan Prime (gratis) atau dibeli di apotek terdekat';
   function namaDokter(txt, pid, cls) { // nama dokter yang dapat diklik (hanya bila profil terisi)
     if (!pid) { const s = document.createElement('span'); if (cls) s.className = cls; s.textContent = txt; return s; }
     const b = document.createElement('button'); b.type = 'button'; b.className = 'dok ' + (cls || ''); b.textContent = txt; b.title = 'Lihat profil dokter';
